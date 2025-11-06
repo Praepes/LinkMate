@@ -1,10 +1,10 @@
-# HP Smart Panel
+# LinkMate
 
 一个基于 Android 的智能家居控制面板应用，专为平板设备设计，支持 Home Assistant 集成、天气显示、提醒管理等功能。
 
 ## 项目简介
 
-HP Smart Panel 是一个横屏显示的智能家居控制面板应用，可以运行在 Android 平板设备上，作为家庭智能设备的控制中心。应用支持与 Home Assistant 系统集成，提供实时设备控制、天气信息显示、提醒管理等功能。
+LinkMate 是一个横屏显示的智能家居控制面板应用，可以运行在 Android 平板设备上，作为家庭智能设备的控制中心。应用支持与 Home Assistant 系统集成，提供实时设备控制、天气信息显示、提醒管理等功能。
 
 ## 主要功能
 
@@ -128,7 +128,7 @@ app/src/main/java/io/linkmate/
 │   ├── theme/               # 主题配置
 │   └── viewmodels/          # ViewModel
 ├── util/                    # 工具类
-├── HPApp.kt                 # Application 类
+├── LinkMateApp.kt           # Application 类（Hilt 应用入口）
 ├── MainActivity.kt          # 主 Activity
 ├── MainScreen.kt            # 主屏幕
 ├── BakingScreen.kt          # 烘焙模式屏幕

@@ -63,7 +63,7 @@ class ScreenKeepOnManager @Inject constructor() {
                 val powerManager = activity.getSystemService(Activity.POWER_SERVICE) as PowerManager
                 wakeLock = powerManager.newWakeLock(
                     PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
-                    "HPApp::ScreenKeepOn"
+                    "LinkMateApp::ScreenKeepOn"
                 ).apply {
                     acquire(10 * 60 * 60 * 1000L) // 10小时超时
                 }
