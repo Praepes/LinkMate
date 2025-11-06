@@ -86,8 +86,9 @@ HP Smart Panel 是一个横屏显示的智能家居控制面板应用，可以�
 - **Hilt** - 依赖注入框架
 
 ### 网络通信
-- **Ktor** - WebSocket 和 HTTP 客户端
-- **Retrofit**（如需要）- REST API 客户端
+- **Retrofit** - REST API 客户端
+- **OkHttp** - HTTP 客户端和 WebSocket 支持
+- **Ktor** - 嵌入式 Web 服务器
 
 ### 数据存储
 - **Room Database** - 本地数据库
@@ -95,7 +96,9 @@ HP Smart Panel 是一个横屏显示的智能家居控制面板应用，可以�
 
 ### 其他依赖
 - **Coil** - 图片加载
-- **Gson** - JSON 序列化
+- **Gson** - JSON 序列化（通过 Retrofit converter-gson）
+- **Kotlin Coroutines** - 异步编程支持
+- **Google Play Services Location** - 位置服务
 
 ## 系统要求
 
@@ -124,9 +127,13 @@ app/src/main/java/io/linkmate/
 │   ├── screens/             # 屏幕组件
 │   ├── theme/               # 主题配置
 │   └── viewmodels/          # ViewModel
+├── util/                    # 工具类
 ├── HPApp.kt                 # Application 类
 ├── MainActivity.kt          # 主 Activity
-└── MainScreen.kt            # 主屏幕
+├── MainScreen.kt            # 主屏幕
+├── BakingScreen.kt          # 烘焙模式屏幕
+├── BakingViewModel.kt       # 烘焙模式 ViewModel
+└── UiState.kt               # UI 状态定义
 
 ```
 
