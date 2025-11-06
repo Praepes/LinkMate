@@ -1,0 +1,29 @@
+buildscript {
+    ext {
+        compose_version = '1.5.1'
+        kotlin_version = '1.9.23' // 更新 Kotlin 版本
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.48'
+        classpath "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:1.9.23-1.0.19" // 修正 KSP 插件版本
+    }
+}
+
+plugins {
+    id 'com.android.application' version '8.1.1' apply false
+    id 'com.android.library' version '8.1.1' apply false
+    id 'org.jetbrains.kotlin.android' version '1.9.23' apply false // 更新 Kotlin Android 插件版本
+}
+
+//allprojects {
+//    repositories {
+//        google()
+//       mavenCentral()
+//    }
+//}
