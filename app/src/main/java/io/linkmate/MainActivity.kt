@@ -47,11 +47,16 @@ class MainActivity : ComponentActivity() {
         screenKeepOnManager.setActivity(this)
         
         // 启动前台 Web 服务器服�?
-        val intent = Intent(this, WebServerService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
+        try {
+            val intent = Intent(this, WebServerService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error starting WebServerService: ${e.message}", e)
+            e.printStackTrace()
         }
         setContent {
             val homeViewModel: HomeViewModel = hiltViewModel()
@@ -73,8 +78,16 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         // 确保 Activity 恢复时重新注�?
-        screenBrightnessManager.setActivity(this)
-        screenKeepOnManager.setActivity(this)
+        try {
+            if (::screenBrightnessManager.isInitialized) {
+                screenBrightnessManager.setActivity(this)
+            }
+            if (::screenKeepOnManager.isInitialized) {
+                screenKeepOnManager.setActivity(this)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error in onResume: ${e.message}", e)
+        }
     }
     
     override fun onPause() {
@@ -85,8 +98,16 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         // Activity 销毁时清除引用
-        screenBrightnessManager.setActivity(null)
-        screenKeepOnManager.setActivity(null)
+        try {
+            if (::screenBrightnessManager.isInitialized) {
+                screenBrightnessManager.setActivity(null)
+            }
+            if (::screenKeepOnManager.isInitialized) {
+                screenKeepOnManager.setActivity(null)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error in onDestroy: ${e.message}", e)
+        }
     }
 }
 
