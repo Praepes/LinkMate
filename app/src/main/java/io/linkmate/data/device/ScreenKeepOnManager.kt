@@ -9,8 +9,8 @@ import javax.inject.Singleton
 private const val TAG = "ScreenKeepOnManager"
 
 /**
- * 屏幕常亮管理�?
- * 用于控制应用的屏幕常亮状态（防止屏幕自动息屏�?
+ * 屏幕常亮管理器
+ * 控制应用的屏幕常亮状态（防止屏幕自动息屏）
  */
 @Singleton
 class ScreenKeepOnManager @Inject constructor() {
@@ -34,7 +34,7 @@ class ScreenKeepOnManager @Inject constructor() {
     }
     
     /**
-     * 设置屏幕常亮状�?
+     * 设置屏幕常亮状态
      * @param keepOn true 表示保持屏幕常亮，false 表示允许自动息屏
      */
     fun setKeepOn(keepOn: Boolean) {
@@ -46,7 +46,7 @@ class ScreenKeepOnManager @Inject constructor() {
     }
     
     /**
-     * 获取当前常亮状�?
+     * 获取当前常亮状态
      */
     fun isKeepOn(): Boolean = isKeepOnEnabled
     

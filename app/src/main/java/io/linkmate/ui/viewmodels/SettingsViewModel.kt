@@ -131,7 +131,7 @@ class SettingsViewModel @Inject constructor(
     }
     
     fun updateGridColumns(columns: Int) {
-        _settings.value = _settings.value.copy(gridColumns = columns.coerceIn(1, 10))
+        _settings.value = _settings.value.copy(gridColumns = columns.coerceIn(1, 25))
     }
     
     fun updateGridRows(rows: Int) {
@@ -154,7 +154,7 @@ class SettingsViewModel @Inject constructor(
     }
     
     fun updateColorThemeMode(mode: Int) {
-        // 允许 0-1 的范围(0=自定义颜色 1=动态
+        // 允许 0-1 的范围（0=自定义颜色，1=动态系统），默认值是 1
         _settings.value = _settings.value.copy(colorThemeMode = mode.coerceIn(0, 1))
     }
     

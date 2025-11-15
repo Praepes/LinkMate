@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
         screenBrightnessManager.setActivity(this)
         screenKeepOnManager.setActivity(this)
         
-        // 启动前台 Web 服务器服�?
+        // 启动前台 Web 服务器服务
         try {
             val intent = Intent(this, WebServerService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
     
     override fun onResume() {
         super.onResume()
-        // 确保 Activity 恢复时重新注�?
+        // 确保 Activity 恢复时重新注入
         try {
             if (::screenBrightnessManager.isInitialized) {
                 screenBrightnessManager.setActivity(this)
@@ -92,7 +92,7 @@ class MainActivity : ComponentActivity() {
     
     override fun onPause() {
         super.onPause()
-        // Activity 暂停时不清除 Activity 引用，保持亮度设�?
+        // Activity 暂停时不清除 Activity 引用，保持亮度设置
     }
     
     override fun onDestroy() {
@@ -125,32 +125,39 @@ fun LocationPermissionRequester(homeViewModel: HomeViewModel = hiltViewModel()) 
             homeViewModel.onPermissionsGranted()
         } else {
             // 权限被拒绝，可以在这里显示一个消息给用户
-            // 或者导航到设置页面�?
+            // 或者导航到设置页面提示
             // Log.d("Permissions", "Location permissions denied")
         }
     }
 
     LaunchedEffect(Unit) {
-        val fineLocationPermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val coarseLocationPermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (!fineLocationPermission || !coarseLocationPermission) {
-            requestPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        } else {
-            // 权限已经被授予，直接通知 ViewModel
+        // API < 23 (Android 5.0-5.1) 权限在安装时授予，直接检查即可
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            // 对于 API 21-22，权限在安装时已授予，直接通知 ViewModel
             homeViewModel.onPermissionsGranted()
+        } else {
+            // API 23+ 需要运行时权限请求
+            val fineLocationPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            val coarseLocationPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!fineLocationPermission || !coarseLocationPermission) {
+                requestPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
+            } else {
+                // 权限已经被授予，直接通知 ViewModel
+                homeViewModel.onPermissionsGranted()
+            }
         }
     }
 }

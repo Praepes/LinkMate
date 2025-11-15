@@ -3,7 +3,7 @@
 import io.linkmate.data.local.dao.WeatherCacheDao
 import io.linkmate.data.local.WeatherCacheEntity
 import io.linkmate.data.remote.hefeng.HeFengWeatherService
-import io.linkmate.data.remote.hefeng.AirQualityResponse // 导入新的数据�?
+import io.linkmate.data.remote.hefeng.AirQualityResponse // 导入新的数据模型
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -35,7 +35,7 @@ class WeatherRepository @Inject constructor(
 
 
             if (weatherResponse.code == "200") {
-                // 现在�?airQualityResponse.now.aqi 获取空气质量，并进行空安全检�?
+                // 现在从 airQualityResponse.now.aqi 获取空气质量，并进行空安全检查
                 val airQuality = airQualityResponse.now?.aqi ?: "未知"
                 val weatherEntity = WeatherCacheEntity(
                     latitude = 0.0,

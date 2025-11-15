@@ -4,14 +4,14 @@ import androidx.compose.ui.graphics.Color
 
 /**
  * 根据深色计算对应的浅色版本（用于半自动模式）
- * 使用HSL颜色空间，增加亮度并稍微调整饱和�?
+ * 使用 HSL 颜色空间，增加亮度并轻微降低饱和度
  */
 fun calculateLightColorFromDark(darkColor: Color): Color {
     val red = darkColor.red
     val green = darkColor.green
     val blue = darkColor.blue
     
-    // 转换�?HSL
+    // 转换为 HSL
     val max = maxOf(red, green, blue)
     val min = minOf(red, green, blue)
     val delta = max - min
@@ -19,7 +19,7 @@ fun calculateLightColorFromDark(darkColor: Color): Color {
     // 计算亮度 (Lightness)
     var lightness = (max + min) / 2f
     
-    // 计算饱和�?(Saturation)
+    // 计算饱和度 (Saturation)
     var saturation = if (delta == 0f) 0f else delta / (1f - kotlin.math.abs(2f * lightness - 1f))
     
     // 计算色相 (Hue)
@@ -43,7 +43,7 @@ fun calculateLightColorFromDark(darkColor: Color): Color {
     // 稍微降低饱和度，让浅色更柔和
     saturation = (saturation * 0.7f).coerceIn(0f, 1f)
     
-    // 转换�?RGB
+    // 转换回 RGB
     val c = (1f - kotlin.math.abs(2f * targetLightness - 1f)) * saturation
     val x = c * (1f - kotlin.math.abs((hue * 6f) % 2f - 1f))
     val m = targetLightness - c / 2f
@@ -65,14 +65,14 @@ fun calculateLightColorFromDark(darkColor: Color): Color {
 }
 
 /**
- * �?Long (ARGB) 转换�?Color
+ * Long (ARGB) 转换为 Color
  */
 fun Long.toColor(): Color {
     return Color(this)
 }
 
 /**
- * Color 转换�?Long (ARGB)
+ * Color 转换为 Long (ARGB)
  */
 fun Color.toLong(): Long {
     val a = (alpha * 255).toInt() and 0xFF

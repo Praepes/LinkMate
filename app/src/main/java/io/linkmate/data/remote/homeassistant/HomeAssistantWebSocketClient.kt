@@ -95,7 +95,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
 
     suspend fun connect(config: HaConfigEntity, isReconnect: Boolean = false) {
         connectionMutex.withLock {
-            // 检查连接配置是否改变（只比�?baseUrl �?token，因�?selectedEntities 改变不需要重新连接）
+            // 检查连接配置是否改变（只比较 baseUrl 和 token，selectedEntities 变化不强制重连）
             val currentConfig = haConfig
             val configChanged = currentConfig == null || 
                                currentConfig.baseUrl != config.baseUrl || 
@@ -104,7 +104,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
             // 如果连接配置未改变且已连接，跳过连接
             if (!configChanged && _connectionStatus.value) {
                 Log.d(TAG, "Already connected with the same config (baseUrl and token). Skipping new connection.")
-                // 即使配置对象不同，只�?baseUrl �?token 相同，就更新配置对象（以更新 selectedEntities 等字段）
+                // 即使配置对象不同，只要 baseUrl 和 token 相同，就更新配置对象（以同步 selectedEntities 等字段）
                 haConfig = config
                 return
             }
@@ -517,10 +517,10 @@ class HomeAssistantWebSocketClient @Inject constructor(
                     subscribeServiceCallsMessageId -> {
                         // This is the response to subscribe_events for call_service
                         if (result.success) {
-                            Log.d(TAG, "�?订阅 call_service 事件成功！订阅ID: $id")
+                            Log.d(TAG, "✅ 订阅 call_service 事件成功，订阅ID: $id")
                         } else {
                             val errorMsg = result.error?.message ?: "Unknown subscription error"
-                            Log.e(TAG, "�?订阅 call_service 事件失败: $errorMsg")
+                            Log.e(TAG, "❌ 订阅 call_service 事件失败: $errorMsg")
                         }
                         pendingResults.remove(id)
                     }
@@ -563,12 +563,12 @@ class HomeAssistantWebSocketClient @Inject constructor(
                 }
             }
             "event" -> {
-                // 先尝试解析为通用事件来获取事件类�?
+                // 先尝试解析为通用事件，获取事件类型
                 try {
                     val eventTypeCheck = gson.fromJson(message, EventTypeCheck::class.java)
                     val eventType = eventTypeCheck.event?.eventType
                     
-                    Log.d(TAG, "📨 收到事件，类�? $eventType")
+                    Log.d(TAG, "📨 收到事件，类型 $eventType")
                     
                     when (eventType) {
                         "state_changed" -> {
@@ -583,11 +583,11 @@ class HomeAssistantWebSocketClient @Inject constructor(
                         }
                         "call_service" -> {
                             // 处理服务调用事件
-                            Log.d(TAG, "🔧 收到 call_service 事件，开始处�?..")
+                            Log.d(TAG, "🔧 收到 call_service 事件，开始处理...")
                             handleServiceCallEvent(message)
                         }
                         else -> {
-                            Log.d(TAG, "📨 WebSocket event type: $eventType (未处�?")
+                            Log.d(TAG, "📨 WebSocket event type: $eventType (未处理)")
                             // 打印原始消息以便调试
                             if (eventType != null && eventType.contains("service", ignoreCase = true)) {
                                 Log.d(TAG, "📨 原始事件消息: ${message.take(500)}")
@@ -595,7 +595,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "�?解析事件消息失败: ${e.message}", e)
+                    Log.e(TAG, "❌ 解析事件消息失败: ${e.message}", e)
                     Log.d(TAG, "原始消息: ${message.take(500)}")
                 }
             }
@@ -641,7 +641,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
         )
         val json = gson.toJson(subscribeMessage)
         webSocket.send(json)
-        Log.d(TAG, "📤 发送订�?call_service 事件请求，ID: ${subscribeMessage.id}, JSON: $json")
+        Log.d(TAG, "📤 发送订阅 call_service 事件请求，ID: ${subscribeMessage.id}, JSON: $json")
     }
     
     /**
@@ -659,7 +659,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
             Log.d(TAG, "🔧 service_data: ${serviceData.serviceData}")
             Log.d(TAG, "🔧 target: ${serviceData.target}")
             
-            // �?target �?service_data 中获�?entity_id（Home Assistant 新版本使�?target�?
+            // 从 target 或 service_data 中获取 entity_id（HA 新版本使用 target）
             val entityIdFromTarget = serviceData.target?.get("entity_id") as? String
             val entityIdFromTargetList = serviceData.target?.get("entity_id") as? List<*>
             val entityIdFromServiceData = serviceData.serviceData?.get("entity_id") as? String
@@ -678,35 +678,34 @@ class HomeAssistantWebSocketClient @Inject constructor(
             
             // 检查设备ID
             val deviceIdFromConfig = haConfig?.let { 
-                // 从配置中无法直接获取设备ID，需要从应用上下文获�?
-                // 这里我们通过检查实体ID是否包含已知的设备ID模式来判�?
+                // 配置中无法直接获取设备ID，通过检查实体ID是否包含已知模式来判断
                 actualEntityId?.contains("_screen_brightness") == true || 
                 actualEntityId?.contains("_keep_screen_on") == true
             } ?: false
             
-            Log.d(TAG, "🔧 实体ID匹配检�? $actualEntityId (包含屏幕相关: $deviceIdFromConfig)")
+            Log.d(TAG, "🔧 实体ID匹配检查 $actualEntityId (包含屏幕相关: $deviceIdFromConfig)")
             
             if (actualEntityId != null && (actualEntityId.contains("_screen_brightness") || actualEntityId.contains("_keep_screen_on"))) {
-                // 创建虚拟�?HaEntityState 来传递服务调用信�?
+                // 创建虚拟 HaEntityState 来传递服务调用信息
                 val virtualState = createVirtualEntityStateFromServiceCall(serviceData, actualEntityId)
                 if (virtualState != null) {
-                    Log.d(TAG, "�?创建虚拟状态成�? ${virtualState.entityId}, state=${virtualState.state}, brightness=${virtualState.attributes["brightness"]}")
+                    Log.d(TAG, "✅ 创建虚拟状态成功 ${virtualState.entityId}, state=${virtualState.state}, brightness=${virtualState.attributes["brightness"]}")
                     launch { _entityStateUpdates.emit(virtualState) }
                 } else {
-                    Log.w(TAG, "⚠️ 创建虚拟状态失�? domain=${serviceData.domain}, service=${serviceData.service}, entityId=$actualEntityId")
+                    Log.w(TAG, "⚠️ 创建虚拟状态失败 domain=${serviceData.domain}, service=${serviceData.service}, entityId=$actualEntityId")
                 }
             } else {
                 Log.d(TAG, "⏭️ 服务调用实体ID不匹配我们的屏幕实体: $actualEntityId")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "�?处理服务调用事件失败: ${e.message}", e)
-            Log.e(TAG, "�?异常堆栈: ${e.stackTraceToString()}")
+            Log.e(TAG, "❌ 处理服务调用事件失败: ${e.message}", e)
+            Log.e(TAG, "❌ 异常堆栈: ${e.stackTraceToString()}")
             Log.d(TAG, "原始消息: $rawMessage")
         }
     }
     
     /**
-     * 从服务调用创建虚拟的实体状�?
+     * 从服务调用创建虚拟的实体状态
      */
     private fun createVirtualEntityStateFromServiceCall(
         serviceData: ServiceCallData,
@@ -718,11 +717,11 @@ class HomeAssistantWebSocketClient @Inject constructor(
                 val brightness = serviceData.serviceData?.get("brightness") as? Number
                 val brightnessPct = serviceData.serviceData?.get("brightness_pct") as? Number
                 
-                // 计算亮度�?
+                // 计算亮度
                 val finalBrightness = when {
                     brightness != null -> brightness.toInt()
                     brightnessPct != null -> (brightnessPct.toInt() * 2.55).toInt().coerceIn(0, 255)
-                    else -> 255 // 默认最大亮�?
+                    else -> 255 // 默认最大亮度
                 }
                 
                 val attributes = mutableMapOf<String, Any>(
@@ -741,7 +740,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
                     lastChanged = System.currentTimeMillis().toString(),
                     context = mapOf(
                         "id" to "service_call_${System.currentTimeMillis()}",
-                        "from_service_call" to true  // 标识这是来自 call_service 的虚拟状�?
+                        "from_service_call" to true  // 标识来自 call_service 的虚拟状态
                     )
                 )
             }
@@ -759,7 +758,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
                     lastChanged = System.currentTimeMillis().toString(),
                     context = mapOf(
                         "id" to "service_call_${System.currentTimeMillis()}",
-                        "from_service_call" to true  // 标识这是来自 call_service 的虚拟状�?
+                        "from_service_call" to true  // 标识来自 call_service 的虚拟状态
                     )
                 )
             }
@@ -776,7 +775,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
                     lastChanged = System.currentTimeMillis().toString(),
                     context = mapOf(
                         "id" to "service_call_${System.currentTimeMillis()}",
-                        "from_service_call" to true  // 标识这是来自 call_service 的虚拟状�?
+                        "from_service_call" to true  // 标识来自 call_service 的虚拟状态
                     )
                 )
             }
@@ -793,7 +792,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
                     lastChanged = System.currentTimeMillis().toString(),
                     context = mapOf(
                         "id" to "service_call_${System.currentTimeMillis()}",
-                        "from_service_call" to true  // 标识这是来自 call_service 的虚拟状�?
+                        "from_service_call" to true  // 标识来自 call_service 的虚拟状态
                     )
                 )
             }
@@ -802,7 +801,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
     }
 
     suspend fun requestAllEntityStates(): List<HaEntityState> {
-        // 等待认证完成，如果认证被取消（可能是连接重建），等待新连接建�?
+        // 等待认证完成；若被取消（如连接重建），则继续等待新连接
         var authAttempts = 0
         val maxAuthAttempts = 3
         
@@ -810,7 +809,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
             val currentAuthDeferred = connectionMutex.withLock { authenticatedDeferred }
             
             if (currentAuthDeferred == null) {
-                // 如果认证 deferred �?null，等待一小段时间让连接建�?
+                // 如果认证 deferred 为 null，等待片刻让连接建立
                 Log.d(TAG, "Authentication deferred is null, waiting for connection to establish...")
                 kotlinx.coroutines.delay(100)
                 authAttempts++
@@ -820,13 +819,13 @@ class HomeAssistantWebSocketClient @Inject constructor(
             try {
                 currentAuthDeferred.await()
                 Log.d(TAG, "Authentication completed, proceeding with request.")
-                break // 认证成功，跳出循�?
+                break // 认证成功，跳出循环
             } catch (e: CancellationException) {
-                // 认证被取消，可能是连接重�?
+                // 认证被取消，可能是连接重建
                 Log.w(TAG, "Authentication was cancelled (attempt ${authAttempts + 1}/$maxAuthAttempts), checking if reconnection is in progress...")
                 authAttempts++
                 
-                // 检查连接状态，如果连接正在进行中，等待并重�?
+                // 检查连接状态，如果连接进行中，等待后重试
                 val isConnecting = connectionMutex.withLock {
                     val config = haConfig
                     val isConnected = _connectionStatus.value
@@ -852,9 +851,9 @@ class HomeAssistantWebSocketClient @Inject constructor(
             return emptyList()
         }
         
-        // 等待订阅完成，如果订阅未完成或已取消，尝试重新订�?
+        // 等待订阅完成，如果订阅未完成或已取消，尝试重新订阅
         val currentSubscriptionDeferred: CompletableDeferred<Unit>? = connectionMutex.withLock {
-            // 检查连接状�?
+            // 检查连接状态
             if (!_connectionStatus.value) {
                 Log.e(TAG, "Connection status is false, cannot request states.")
                 return@withLock null
@@ -871,7 +870,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
             val needsResubscribe = currentSub == null || currentSub.isCancelled
             
             if (needsResubscribe) {
-                // 如果订阅 deferred �?null 或已取消，需要重新订�?
+                // 如果订阅 deferred 为 null 或已取消，需要重新订阅
                 Log.d(TAG, "Subscription not active (null=${currentSub == null}, cancelled=${currentSub?.isCancelled}), recreating subscription deferred and resubscribing.")
                 currentSub?.let {
                     if (!it.isCompleted) it.cancel(CancellationException("Recreating subscription"))
@@ -884,7 +883,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
                 subscribeToServiceCalls(ws)
                 newDeferred
             } else {
-                // 订阅正在进行中或已完成，使用现有�?deferred
+                // 订阅正在进行中或已完成，使用现有 deferred
                 currentSub
             }
         }
@@ -894,7 +893,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
             return emptyList()
         }
         
-        // 在锁外等待订阅完成（如果还未完成�?
+        // 在锁外等待订阅完成（如果还未完成）
         if (!currentSubscriptionDeferred.isCompleted) {
             try {
                 currentSubscriptionDeferred.await()
@@ -910,9 +909,9 @@ class HomeAssistantWebSocketClient @Inject constructor(
             Log.d(TAG, "Subscription already completed, proceeding with get_states request.")
         }
         
-        // 重新获取锁，发�?get_states 请求
+        // 重新获取锁，发送 get_states 请求
         return connectionMutex.withLock {
-            // 再次检查连接状�?
+            // 再次检查连接状态
             if (!_connectionStatus.value) {
                 Log.e(TAG, "Connection status is false after waiting for subscription, cannot request states.")
                 return@withLock emptyList()
@@ -1012,7 +1011,7 @@ class HomeAssistantWebSocketClient @Inject constructor(
     }
     
     /**
-     * 更新实体状�?用于上报设备状�?
+     * 更新实体状态（用于上报设备状态）
      * 使用 states.set_state 服务
      */
     suspend fun updateEntityState(

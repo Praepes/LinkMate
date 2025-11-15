@@ -41,8 +41,8 @@ object AppModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-        .addMigrations(AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9) // Add migrations for color theme fields (version 9->10 is handled automatically)
-        .fallbackToDestructiveMigration() // Fallback if migration is not found (开发阶�?
+        .addMigrations(AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_10_11) // Add migrations
+        .fallbackToDestructiveMigration() // 开发阶段：找不到迁移时允许破坏性迁移
         .build()
     }
 

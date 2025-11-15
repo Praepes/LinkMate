@@ -26,7 +26,7 @@ interface HomeAssistantService {
         @Header("Authorization") bearerToken: String,
         @Path("domain") domain: String,
         @Path("service") service: String,
-        @Body requestBody: RequestBody // 更改此处：现在接�?RequestBody
+        @Body requestBody: RequestBody // 现在接收原始 RequestBody
     ): Response<List<HaEntityState>>
     
     @POST("api/states/{entity_id}")

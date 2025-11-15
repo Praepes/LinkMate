@@ -72,27 +72,26 @@ fun LinkmateTheme(
 }
 
 /**
- * 基于主色生成完整的颜色方�?
- * Material 3 会自动从 primary 生成其他颜色，我们只需要设�?primary 相关的核心颜�?
+ * 基于主色生成完整的颜色方案。
+ * Material 3 会自动从 primary 推导其它颜色，这里仅显式指定核心的 primary 相关色。
  */
 private fun createColorSchemeFromPrimary(
     primary: Color,
     isDark: Boolean
 ): androidx.compose.material3.ColorScheme {
-    // Material 3 �?lightColorScheme �?darkColorScheme 如果只传�?primary
-    // 会自动计算其他颜色（包括 primaryContainer, onPrimaryContainer 等）
-    // 但为了确�?TopAppBar 等组件正确显示，我们需要明确设�?primaryContainer
+    // Material 3 的 lightColorScheme/darkColorScheme 会自动推导其它颜色，
+    // 但为了确保 TopAppBar 等组件正常显示，这里显式设置 primaryContainer。
     
-    // 计算 primaryContainer：用�?TopAppBar 等容器背�?
+    // 计算 primaryContainer：用于 TopAppBar 等容器背景
     val primaryContainer = if (isDark) {
-        // 深色模式：primaryContainer �?primary 的变亮版本（混合白色使其更浅�?
+        // 深色模式：primaryContainer 为 primary 的变亮版本（混合白色）
         Color(
             red = (primary.red * 0.6f + 0.4f).coerceIn(0f, 1f),
             green = (primary.green * 0.6f + 0.4f).coerceIn(0f, 1f),
             blue = (primary.blue * 0.6f + 0.4f).coerceIn(0f, 1f)
         )
     } else {
-        // 浅色模式：primaryContainer �?primary 的变浅版本（降低饱和度并提高亮度�?
+        // 浅色模式：primaryContainer 为 primary 的变浅版本（降低饱和度并提高亮度）
         // 使用更柔和的方式：降低主色的强度
         Color(
             red = (primary.red * 0.2f + 0.8f).coerceIn(0f, 1f),
@@ -101,18 +100,18 @@ private fun createColorSchemeFromPrimary(
         )
     }
     
-    // onPrimaryContainer：放�?primaryContainer 上的文本颜色
-    // 在深色模式下使用较亮�?primary，浅色模式下使用较暗�?primary
+    // onPrimaryContainer：primaryContainer 上的文本颜色
+    // 深色用较亮的主色，浅色同样使用主色形成对比
     val onPrimaryContainer = if (isDark) {
-        // 深色模式：使用主色本身（已足够亮�?
+        // 深色模式：使用主色本身（已足够亮）
         primary
     } else {
-        // 浅色模式：使用主色（�?primaryContainer 形成对比�?
+        // 浅色模式：使用主色，与 primaryContainer 形成对比
         primary
     }
     
-    // tertiary 在连接成功提示中使用，所以也需要基于主题生�?
-    // secondary 完全没用，使用默认值即�?
+    // tertiary 用于连接成功提示，需要基于主题生成
+    // secondary 当前未用，保持默认值即可
     val tertiary = if (isDark) {
         // 深色模式：tertiary 稍微调整色调
         Color(
@@ -135,7 +134,7 @@ private fun createColorSchemeFromPrimary(
             primaryContainer = primaryContainer,
             onPrimaryContainer = onPrimaryContainer,
             tertiary = tertiary
-            // secondary 完全没用，使用默认�?
+            // secondary 未用，使用默认
         )
     } else {
         return lightColorScheme(
@@ -143,7 +142,7 @@ private fun createColorSchemeFromPrimary(
             primaryContainer = primaryContainer,
             onPrimaryContainer = onPrimaryContainer,
             tertiary = tertiary
-            // secondary 完全没用，使用默认�?
+            // secondary 未用，使用默认
         )
     }
 }
@@ -153,24 +152,24 @@ private fun rememberColorScheme(
     settings: SettingsEntity?,
     context: android.content.Context
 ): androidx.compose.material3.ColorScheme {
-    val themeMode = settings?.colorThemeMode ?: 1 // 默认动态系�?
+    val themeMode = settings?.colorThemeMode ?: 1 // 默认动态配色
     
     return when (themeMode) {
-        0 -> { // 自定义颜色：直接使用选择的颜色作为主�?
+        0 -> { // 自定义颜色：直接使用选择的颜色作为主色
             val primaryColor = Color(settings?.customPrimaryColor ?: 0xFF6650a4)
-            // 直接使用选择的颜色，不进行任何变�?
+            // 直接使用选择的颜色，不进行额外变换
             createColorSchemeFromPrimary(primaryColor, isDark = darkTheme)
         }
-        1 -> { // 动态系�?
+        1 -> { // 动态配色
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
             } else {
-                // Android 12 以下回退到静态颜�?
+                // Android 12 以下回退到静态配色
                 if (darkTheme) DarkColorScheme else LightColorScheme
             }
         }
         else -> {
-            // 默认使用动态系统或静态颜�?
+            // 默认使用动态或静态配色
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
             } else {

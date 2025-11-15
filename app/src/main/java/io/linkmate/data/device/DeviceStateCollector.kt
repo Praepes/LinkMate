@@ -18,7 +18,7 @@ private const val TAG = "DeviceStateCollector"
 
 /**
  * 设备状态收集器
- * 负责收集设备的各种状态信�?
+ * 负责收集设备的各种状态信息
  */
 @Singleton
 class DeviceStateCollector @Inject constructor(
@@ -26,13 +26,13 @@ class DeviceStateCollector @Inject constructor(
 ) {
     
     /**
-     * 收集当前设备状�?
+     * 收集当前设备状态
      */
     fun collectDeviceState(): DeviceState {
-        // 统一�?ACTION_BATTERY_CHANGED 获取所有电池信息，确保数据一致�?
+        // 统一用 ACTION_BATTERY_CHANGED 获取电池信息，确保数据一致
         val batteryInfo = getBatteryInfo()
         
-        Log.d(TAG, "📱 收集设备状�? 电量=${batteryInfo.level}%, 充电=${batteryInfo.isCharging}, " +
+        Log.d(TAG, "📱 收集设备状态 电量=${batteryInfo.level}%, 充电=${batteryInfo.isCharging}, " +
                 "充电类型=${batteryInfo.chargingType}, 屏幕=${isScreenOn()}")
         
         return DeviceState(
@@ -48,7 +48,7 @@ class DeviceStateCollector @Inject constructor(
     }
     
     /**
-     * 电池信息数据�?
+     * 电池信息数据类
      */
     private data class BatteryInfo(
         val level: Int,
@@ -57,8 +57,8 @@ class DeviceStateCollector @Inject constructor(
     )
     
     /**
-     * �?ACTION_BATTERY_CHANGED 获取所有电池信�?
-     * 这个方法使用 sticky broadcast，确保获取到最新的电池状�?
+     * 通过 ACTION_BATTERY_CHANGED 获取电池信息
+     * 使用 sticky broadcast，确保拿到最新状态
      */
     private fun getBatteryInfo(): BatteryInfo {
         return try {
@@ -66,7 +66,7 @@ class DeviceStateCollector @Inject constructor(
             val batteryStatus = context.registerReceiver(null, intentFilter)
             
             if (batteryStatus == null) {
-                Log.e(TAG, "⚠️ 无法获取电池状�? registerReceiver 返回 null")
+                Log.e(TAG, "⚠️ 无法获取电池状态，registerReceiver 返回 null")
                 return BatteryInfo(level = -1, isCharging = false, chargingType = "unknown")
             }
             
@@ -76,17 +76,17 @@ class DeviceStateCollector @Inject constructor(
             val batteryLevel = if (level >= 0 && scale > 0) {
                 (level * 100 / scale).coerceIn(0, 100)
             } else {
-                // 如果无法�?EXTRA_LEVEL 获取，尝试使�?BatteryManager API
+                // 如果无法通过 EXTRA_LEVEL 获取，尝试使用 BatteryManager API
                 try {
                     val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
                     batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
                 } catch (e: Exception) {
-                    Log.w(TAG, "无法�?BatteryManager 获取电量: ${e.message}")
+                    Log.w(TAG, "无法通过 BatteryManager 获取电量: ${e.message}")
                     -1
                 }
             }
             
-            // 获取充电状�?
+            // 获取充电状态
             val status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
             val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || 
                            status == BatteryManager.BATTERY_STATUS_FULL
@@ -109,7 +109,7 @@ class DeviceStateCollector @Inject constructor(
                 chargingType = chargingType
             )
         } catch (e: Exception) {
-            Log.e(TAG, "�?获取电池信息失败: ${e.message}", e)
+            Log.e(TAG, "❌ 获取电池信息失败: ${e.message}", e)
             BatteryInfo(level = -1, isCharging = false, chargingType = "unknown")
         }
     }
@@ -130,7 +130,7 @@ class DeviceStateCollector @Inject constructor(
     }
     
     /**
-     * 检查屏幕是否亮�?
+     * 检查屏幕是否亮屏
      */
     private fun isScreenOn(): Boolean {
         return try {
@@ -148,13 +148,13 @@ class DeviceStateCollector @Inject constructor(
     }
     
     /**
-     * 获取最后已知位�?
+     * 获取最后已知位置
      */
     private fun getLastKnownLocation(): Location? {
         return try {
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
             
-            // 尝试�?GPS 获取
+            // 尝试从 GPS 获取
             val gpsLocation = try {
                 locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             } catch (e: SecurityException) {
@@ -162,7 +162,7 @@ class DeviceStateCollector @Inject constructor(
                 null
             }
             
-            // 尝试从网络获�?
+            // 尝试从网络获取
             val networkLocation = try {
                 locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
             } catch (e: SecurityException) {

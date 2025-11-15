@@ -18,7 +18,7 @@ import io.linkmate.data.local.dao.WeatherCacheDao
         ReminderEntity::class,
         LayoutConfigEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -84,5 +84,16 @@ abstract class AppDatabase : RoomDatabase() {
         // Migration from version 9 to 10: Remove semiAutoPrimaryColor field (no longer needed)
         // Note: We don't actually remove the column from database, just ignore it in the entity
         // This is safe because the entity no longer references it
+        
+        // Migration from version 10 to 11: Add widgetPositions field
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add new widgetPositions column with default empty string
+                database.execSQL("""
+                    ALTER TABLE layout_config 
+                    ADD COLUMN widgetPositions TEXT NOT NULL DEFAULT ''
+                """.trimIndent())
+            }
+        }
     }
 }

@@ -238,9 +238,19 @@ fun <T> DraggableGrid(
         val targetIconLeftXPx = currentFingerXPx - itemCenterOffsetXPx
         val targetIconLeftYPx = currentFingerYPx - itemCenterOffsetYPx
         
-        // 转换为网格坐标（使用左上角计算）
-        val gridX = ((targetIconLeftXPx + cellSizePx / 2) / (cellSizePx + horizontalSpacingPx)).toInt().coerceAtLeast(0)
-        val gridY = ((targetIconLeftYPx + cellSizePx / 2) / (cellSizePx + verticalSpacingPx)).toInt().coerceAtLeast(0)
+        // 转换为网格坐标（使用更精确的边界检测）
+        // 使用图标中心点来计算目标网格，而不是左上角，这样可以更准确地处理边界
+        val cellWidth = cellSizePx + horizontalSpacingPx
+        val cellHeight = cellSizePx + verticalSpacingPx
+        
+        // 计算图标中心点对应的网格坐标
+        val centerGridX = currentFingerXPx / cellWidth
+        val centerGridY = currentFingerYPx / cellHeight
+        
+        // 将中心点坐标转换为左上角网格坐标
+        // 如果图标中心在某个网格的右半部分，应该放在下一个网格
+        val gridX = (centerGridX - (item.width - 1) / 2f).toInt().coerceAtLeast(0)
+        val gridY = (centerGridY - (item.height - 1) / 2f).toInt().coerceAtLeast(0)
         
         // 确保在有效范围内
         val validX = gridX.coerceIn(0, (actualMaxColumns - item.width).coerceAtLeast(0))
@@ -360,17 +370,16 @@ fun <T> DraggableGrid(
                                     onDragEnd = {
                                         val draggedId = draggingItemId
                                         if (draggedId != null && targetGridX >= 0 && targetGridY >= 0) {
-                                            // 从positionedItems 中获取被拖拽项的当前尺寸
-                                            val positionedDraggedItem = positionedItems.find { it.item.id == draggedId }
-                                            if (positionedDraggedItem != null) {
-                                                // 使用最新的位置信息，而不是闭包捕获的旧值
-                                                val currentPositions = latestItemPositions
-                                                val currentPos = currentPositions[draggedId]
-                                                val newPos = WidgetPosition(targetGridX, targetGridY)
-                                                
-                                                // 使用 positionedItems 中的尺寸，确保使用最新的尺寸
-                                                val draggedItemWidth = positionedDraggedItem.width
-                                                val draggedItemHeight = positionedDraggedItem.height
+                                            // 使用最新的位置信息，而不是闭包捕获的旧值
+                                            val currentPositions = latestItemPositions
+                                            val currentPos = currentPositions[draggedId]
+                                            val newPos = WidgetPosition(targetGridX, targetGridY)
+                                            
+                                            // 从 items 中获取被拖拽项的尺寸（使用最新的数据）
+                                            val draggedItem = items.find { it.id == draggedId }
+                                            if (draggedItem != null) {
+                                                val draggedItemWidth = draggedItem.size.width
+                                                val draggedItemHeight = draggedItem.size.height
 
                                                 // 检查目标位置是否已经被占用（基于最新的 itemPositions，排除被拖拽的项）
                                                 // 创建一个临时的位置映射，移除被拖拽项的位置，这样它不会影响占用检查
@@ -379,7 +388,6 @@ fun <T> DraggableGrid(
                                                 
                                                 // 查找占用目标位置的项
                                                 // 计算被拖拽项将占用的所有网格单元
-
                                                 val targetOccupied = mutableSetOf<Pair<Int, Int>>()
                                                 for (dy in 0 until draggedItemHeight) {
                                                     for (dx in 0 until draggedItemWidth) {
@@ -392,14 +400,12 @@ fun <T> DraggableGrid(
                                                 }
 
                                                 // 检查哪些项占用了这些网格单元
-
                                                 val conflictingItems = items.filter { item ->
                                                     val isNotDragged = item.id != draggedId
                                                     if (isNotDragged) {
                                                         val itemPos = tempItemPositions[item.id]
                                                         if (itemPos != null) {
                                                             // 计算该项占用的所有网格单元
-
                                                             val itemOccupied = mutableSetOf<Pair<Int, Int>>()
                                                             for (dy in 0 until item.size.height) {
                                                                 for (dx in 0 until item.size.width) {
@@ -410,16 +416,13 @@ fun <T> DraggableGrid(
                                                                     }
                                                                 }
                                                             }
-
                                                             // 检查是否有重叠的网格单元
-
                                                             targetOccupied.intersect(itemOccupied).isNotEmpty()
                                                         } else {
                                                             false // 没有位置的项不算占用
                                                         }
                                                     } else {
                                                         false // 被拖拽的项本身不算占用
-
                                                     }
                                                 }
                                                 
@@ -562,12 +565,14 @@ fun <T> DraggableGrid(
                                                         }
                                                     }
                                                 } else {
-                                                    // 没有冲突，可以
+                                                    // 没有冲突，可以放置
                                                     if (currentPos == null || currentPos.x != newPos.x || currentPos.y != newPos.y) {
                                                         Log.d(TAG, "更新位置: $draggedId -> ($targetGridX, $targetGridY)")
                                                         onPositionUpdate(draggedId, newPos)
                                                     }
                                                 }
+                                            } else {
+                                                Log.e(TAG, "无法找到被拖拽项: $draggedId")
                                             }
                                         }
                                         

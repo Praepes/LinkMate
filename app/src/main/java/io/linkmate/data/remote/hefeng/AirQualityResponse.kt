@@ -6,11 +6,11 @@ data class AirQualityResponse(
     @SerializedName("code") val code: String,
     @SerializedName("updateTime") val updateTime: String,
     @SerializedName("fxLink") val fxLink: String?,
-    @SerializedName("now") val now: AirNowData, // 这里�?'now' 是空气质量数�?
+    @SerializedName("now") val now: AirNowData, // "now" 是空气质量数据
     @SerializedName("refer") val refer: Refer?
 )
 
-data class AirNowData( // 这是空气质量 API 响应�?'now' 字段的具体内�?
+data class AirNowData( // 空气质量 API 响应中 "now" 字段的具体内容
     @SerializedName("pubTime") val pubTime: String,
     @SerializedName("aqi") val aqi: String,
     @SerializedName("level") val level: String,

@@ -14,5 +14,5 @@ interface HeFengWeatherService {
     suspend fun getCurrentAirQuality(
         @Query("location") location: String,
         @Query("key") key: String
-    ): AirQualityResponse // 修改返回类型�?AirQualityResponse
+    ): AirQualityResponse // 返回空气质量响应模型
 }

@@ -81,8 +81,8 @@ class HomeAssistantRepository @Inject constructor(
     }
 
     /**
-     * 尝试在不写入数据库的情况下建立或恢复 WebSocket 连接�?
-     * 用于前端检测断线后主动触发连接，避免重复写库导致的 Flow 级联触发与重连风暴�?
+     * 尝试在不写入数据库的情况下建立或恢复 WebSocket 连接。
+     * 用于前端检测断线后主动触发连接，避免重复写库导致 Flow 级联触发和重连风暴。
      */
     suspend fun connectIfPossible(haConfig: HaConfigEntity?) {
         if (haConfig == null) return
@@ -135,10 +135,10 @@ class HomeAssistantRepository @Inject constructor(
     }
     
     /**
-     * 上报设备状态到 Home Assistant (使用 REST API)
-     * @param entityId 实体 ID (�?sensor.android_device_battery)
-     * @param state 状态�?
-     * @param attributes 属�?
+     * 上报设备状态到 Home Assistant (REST API)
+     * @param entityId 实体 ID (例如 sensor.android_device_battery)
+     * @param state 状态值
+     * @param attributes 属性
      * @return 是否成功
      */
     suspend fun reportDeviceState(
@@ -156,7 +156,7 @@ class HomeAssistantRepository @Inject constructor(
                 return false
             }
             
-            // 创建动�?Retrofit 实例
+            // 创建临时 Retrofit 实例
             val retrofit = Retrofit.Builder()
                 .baseUrl(haConfig.baseUrl.ensureTrailingSlash())
                 .client(okHttpClient)
@@ -165,7 +165,7 @@ class HomeAssistantRepository @Inject constructor(
             
             val service = retrofit.create(HomeAssistantService::class.java)
             
-            // 构建请求�?
+            // 构建请求体
             val stateData = mapOf(
                 "state" to state,
                 "attributes" to attributes
@@ -173,7 +173,7 @@ class HomeAssistantRepository @Inject constructor(
             val json = gson.toJson(stateData)
             val requestBody = json.toRequestBody("application/json".toMediaType())
             
-            Log.d(TAG, "📤 上报设备状�? entityId=$entityId, state=$state")
+            Log.d(TAG, "📤 上报设备状态 entityId=$entityId, state=$state")
             Log.d(TAG, "📤 请求JSON: $json")
             
             // 调用 REST API
@@ -183,8 +183,8 @@ class HomeAssistantRepository @Inject constructor(
             if (response.isSuccessful) {
                 val responseBody = response.body()
                 if (responseBody != null) {
-                    Log.d(TAG, "�?成功上报设备状�? entityId=$entityId")
-                    Log.d(TAG, "�?响应状�? ${responseBody.state}, lastUpdated=${responseBody.lastUpdated}")
+                    Log.d(TAG, "✅ 成功上报设备状态 entityId=$entityId")
+                    Log.d(TAG, "✅ 响应状态 ${responseBody.state}, lastUpdated=${responseBody.lastUpdated}")
                     true
                 } else {
                     Log.w(TAG, "⚠️ 上报成功但响应体为空: entityId=$entityId")
@@ -192,9 +192,9 @@ class HomeAssistantRepository @Inject constructor(
                 }
             } else {
                 val errorBody = response.errorBody()?.string()
-                Log.e(TAG, "�?上报设备状态失�? entityId=$entityId")
-                Log.e(TAG, "�?HTTP状态码: ${response.code()}, 消息: ${response.message()}")
-                Log.e(TAG, "�?错误响应�? $errorBody")
+                Log.e(TAG, "❌ 上报设备状态失败 entityId=$entityId")
+                Log.e(TAG, "❌ HTTP状态码: ${response.code()}, 消息: ${response.message()}")
+                Log.e(TAG, "❌ 错误响应: $errorBody")
                 false
             }
         } catch (e: Exception) {
@@ -204,8 +204,8 @@ class HomeAssistantRepository @Inject constructor(
     }
     
     /**
-     * 获取单个实体的状态（通过 REST API�?
-     * 用于定期检查亮度控制实体状态，避免频繁获取所有实�?
+     * 获取单个实体状态（REST API）。
+     * 用于定期检查亮度控制实体状态，避免频繁获取全部实体。
      */
     suspend fun getEntityState(entityId: String): HaEntityState? {
         return try {
@@ -218,7 +218,7 @@ class HomeAssistantRepository @Inject constructor(
                 return null
             }
             
-            // 创建动�?Retrofit 实例
+            // 创建临时 Retrofit 实例
             val retrofit = Retrofit.Builder()
                 .baseUrl(haConfig.baseUrl.ensureTrailingSlash())
                 .client(okHttpClient)
@@ -227,7 +227,7 @@ class HomeAssistantRepository @Inject constructor(
             
             val service = retrofit.create(HomeAssistantService::class.java)
             
-            // 调用 REST API（直接返�?HaEntityState，不�?Response�?
+            // 调用 REST API（直接返回 HaEntityState）
             val bearerToken = "Bearer ${haConfig.token}"
             val entityState = service.getEntityState(bearerToken, entityId)
             

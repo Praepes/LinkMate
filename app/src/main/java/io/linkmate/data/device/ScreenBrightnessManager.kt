@@ -11,21 +11,21 @@ import javax.inject.Singleton
 private const val TAG = "ScreenBrightnessManager"
 
 /**
- * 屏幕亮度管理�?
- * 用于控制应用的窗口亮度（不影响系统全局亮度�?
+ * 屏幕亮度管理器
+ * 控制应用窗口亮度（不影响系统全局亮度）
  */
 @Singleton
 class ScreenBrightnessManager @Inject constructor() {
     
     private var currentActivity: Activity? = null
-    private var currentBrightness: Float = -1f // -1 表示使用系统默认�?.0-1.0 表示自定义亮�?
+    private var currentBrightness: Float = -1f // -1 系统默认，0.0-1.0 自定义亮度
     
     /**
      * 注册当前 Activity
      */
     fun setActivity(activity: Activity?) {
         currentActivity = activity
-        // 如果已有亮度设置，应用到�?Activity
+        // 如果已有亮度设置，应用到新的 Activity
         if (activity != null && currentBrightness >= 0) {
             applyBrightness(activity, currentBrightness)
         }
@@ -33,7 +33,7 @@ class ScreenBrightnessManager @Inject constructor() {
     
     /**
      * 设置应用窗口亮度
-     * @param brightness 亮度值，范围 0.0-1.0�?1 表示使用系统默认
+     * @param brightness 亮度值，范围 0.0-1.0，-1 表示使用系统默认
      */
     fun setBrightness(brightness: Float) {
         val normalizedBrightness = when {
@@ -51,12 +51,12 @@ class ScreenBrightnessManager @Inject constructor() {
     
     /**
      * 获取当前亮度设置
-     * @return 亮度值，范围 0.0-1.0�?1 表示使用系统默认
+     * @return 亮度值，范围 0.0-1.0，-1 表示使用系统默认
      */
     fun getBrightness(): Float = currentBrightness
     
     /**
-     * 应用亮度到指�?Activity
+     * 应用亮度到指定 Activity
      */
     private fun applyBrightness(activity: Activity, brightness: Float) {
         try {
@@ -67,13 +67,13 @@ class ScreenBrightnessManager @Inject constructor() {
                 // 使用系统默认亮度
                 layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
             } else {
-                // 设置自定义亮度（0.0 �?1.0�?
+                // 设置自定义亮度（0.0 - 1.0）
                 layoutParams.screenBrightness = brightness
             }
             
             window.attributes = layoutParams
             
-            // 同时设置 WindowInsetsController 的亮度（Android 11+�?
+            // 同时设置 WindowInsetsController 的亮度（Android 11+）
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                 val controller = WindowCompat.getInsetsController(window, window.decorView)
                 controller.isAppearanceLightStatusBars = brightness < 0.5f // 暗色状态栏
@@ -86,7 +86,7 @@ class ScreenBrightnessManager @Inject constructor() {
     }
     
     /**
-     * �?0-255 的亮度值转换为 0.0-1.0
+     * 0-255 亮度值转换为 0.0-1.0
      */
     fun brightnessToFloat(brightness: Int): Float {
         return when {
@@ -97,7 +97,7 @@ class ScreenBrightnessManager @Inject constructor() {
     }
     
     /**
-     * �?0.0-1.0 的亮度值转换为 0-255
+     * 0.0-1.0 亮度值转换为 0-255
      */
     fun brightnessToInt(brightness: Float): Int {
         return when {

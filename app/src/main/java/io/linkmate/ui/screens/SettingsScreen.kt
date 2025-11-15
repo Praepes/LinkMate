@@ -25,6 +25,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.Color
@@ -62,7 +63,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -89,6 +92,7 @@ fun SettingsScreen(
     val haConnectionStatus by settingsViewModel.haConnectionStatus.collectAsState()
     val webPort by settingsViewModel.webPort.collectAsState()
     val webPassword by settingsViewModel.webPassword.collectAsState()
+    val focusManager = LocalFocusManager.current
 
     // Local states for text fields that are updated on Save
     var heFengApiKeyInput by rememberSaveable { mutableStateOf(settings.heFengApiKey) }
@@ -401,9 +405,19 @@ fun SettingsScreen(
             OutlinedTextField(
                 value = gridColumnsInput,
                 onValueChange = { gridColumnsInput = it },
-                label = { Text("网格列数 (1-10，默认4)") },
-
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                label = { Text("网格列数 (1-25，默认4)") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        val gridColumns = gridColumnsInput.toIntOrNull()?.coerceIn(1, 25) ?: 4
+                        gridColumnsInput = gridColumns.toString()
+                        settingsViewModel.updateGridColumns(gridColumns)
+                        focusManager.clearFocus()
+                    }
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
@@ -417,7 +431,22 @@ fun SettingsScreen(
                 value = gridRowsInput,
                 onValueChange = { gridRowsInput = it },
                 label = { Text("网格行数 (留空表示无限行，或1-20)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        val gridRows = if (gridRowsInput.isBlank() || gridRowsInput == "0") {
+                            -1
+                        } else {
+                            gridRowsInput.toIntOrNull()?.coerceIn(1, 20) ?: -1
+                        }
+                        gridRowsInput = if (gridRows == -1) "" else gridRows.toString()
+                        settingsViewModel.updateGridRows(gridRows)
+                        focusManager.clearFocus()
+                    }
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
@@ -437,8 +466,18 @@ fun SettingsScreen(
                 value = reminderWidthInput,
                 onValueChange = { reminderWidthInput = it },
                 label = { Text("提醒卡片宽度 (1-20，默认4)") },
-
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        val reminderWidth = reminderWidthInput.toIntOrNull()?.coerceIn(1, 20) ?: 4
+                        reminderWidthInput = reminderWidth.toString()
+                        settingsViewModel.updateReminderWidth(reminderWidth)
+                        focusManager.clearFocus()
+                    }
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
@@ -452,8 +491,18 @@ fun SettingsScreen(
                 value = reminderHeightInput,
                 onValueChange = { reminderHeightInput = it },
                 label = { Text("提醒卡片高度 (1-4，默认1)") },
-
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        val reminderHeight = reminderHeightInput.toIntOrNull()?.coerceIn(1, 4) ?: 1
+                        reminderHeightInput = reminderHeight.toString()
+                        settingsViewModel.updateReminderHeight(reminderHeight)
+                        focusManager.clearFocus()
+                    }
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
@@ -667,7 +716,7 @@ fun SettingsScreen(
                     val deviceReportInterval = deviceStateReportIntervalInput.toIntOrNull()?.coerceAtLeast(1) ?: 5
                     settingsViewModel.updateDeviceStateReportIntervalMinutes(deviceReportInterval)
                     
-                    val gridColumns = gridColumnsInput.toIntOrNull()?.coerceIn(1, 10) ?: 4
+                    val gridColumns = gridColumnsInput.toIntOrNull()?.coerceIn(1, 25) ?: 4
                     settingsViewModel.updateGridColumns(gridColumns)
                     
                     val gridRows = if (gridRowsInput.isBlank() || gridRowsInput == "0") {

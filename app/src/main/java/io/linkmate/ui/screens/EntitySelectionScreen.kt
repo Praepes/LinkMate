@@ -49,12 +49,12 @@ fun EntitySelectionScreen(
     // 跟踪用户是否修改过选择
     var hasUserModified by remember { mutableStateOf(false) }
     
-    // 初始化选中状态，使用 initialSelectedEntities 的内容作为初始�?
+    // 初始化选中状态，使用 initialSelectedEntities 作为初始值
     var selectedEntities by remember { 
         mutableStateOf(initialSelectedEntities.toSet()) 
     }
     
-    // �?initialSelectedEntities 改变时，如果用户还没修改过，则同步更新本地状�?
+    // 当 initialSelectedEntities 改变且用户尚未修改时，同步更新本地状态
     LaunchedEffect(initialSelectedEntities) {
         if (!hasUserModified) {
             selectedEntities = initialSelectedEntities.toSet()

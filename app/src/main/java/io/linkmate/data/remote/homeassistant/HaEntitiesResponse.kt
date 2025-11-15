@@ -13,4 +13,4 @@ data class HaEntityState(
 
 data class HaServiceCallRequest(
     @SerializedName("entity_id") val entityId: String
-) // 恢复到只包含 entityId 的原始形�?
+) // 保持只包含 entityId 的简化形态

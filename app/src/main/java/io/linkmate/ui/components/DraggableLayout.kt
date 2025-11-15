@@ -37,7 +37,7 @@ data class WidgetSize(
 }
 
 /**
- * 可拖拽的布局�?
+ * 可拖拽的布局项
  */
 data class DraggableItem<T>(
     val id: String,
@@ -48,7 +48,7 @@ data class DraggableItem<T>(
 
 /**
  * 可拖拽的垂直布局
- * 基于拖拽偏移量简单计算目标位�?
+ * 基于拖拽偏移量简单计算目标位置
  */
 @Composable
 fun <T> DraggableColumn(
@@ -80,7 +80,7 @@ fun <T> DraggableColumn(
                                     onDrag = { _, dragAmount ->
                                         dragOffset += dragAmount.y
                                         
-                                        // 简单计算：�?50dp为一个区�?
+                                        // 简单估算：以 150dp 为一个区块
                                         val itemHeightWithSpacing = 150f // 估算高度+间距
                                         val numItemsPassed = (dragOffset / itemHeightWithSpacing).toInt()
                                         val targetIndex = (index + numItemsPassed).coerceIn(0, items.size - 1)

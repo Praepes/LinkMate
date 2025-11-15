@@ -1,7 +1,7 @@
 ﻿package io.linkmate.ui.components
 
 /**
- * Widget 在网格中的位�?
+ * Widget 在网格中的位置
  */
 data class WidgetPosition(
     val x: Int, // 列位置（0 开始）

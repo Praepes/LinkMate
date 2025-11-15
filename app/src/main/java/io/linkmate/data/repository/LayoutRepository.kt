@@ -25,20 +25,50 @@ class LayoutRepository @Inject constructor(
     /**
      * 保存布局配置
      */
-    suspend fun saveLayoutConfig(widgetOrder: String) {
+    suspend fun saveLayoutConfig(widgetOrder: String, widgetPositions: String? = null) {
         try {
             val existingConfig = layoutConfigDao.getLayoutConfig().firstOrNull()
             if (existingConfig != null) {
-                val updatedConfig = existingConfig.copy(widgetOrder = widgetOrder)
+                val updatedConfig = existingConfig.copy(
+                    widgetOrder = widgetOrder,
+                    widgetPositions = widgetPositions ?: existingConfig.widgetPositions
+                )
                 layoutConfigDao.updateLayoutConfig(updatedConfig)
-                Log.d(TAG, "Layout config updated: $widgetOrder")
+                Log.d(TAG, "Layout config updated: order=$widgetOrder, positions=${widgetPositions?.take(100)}")
             } else {
-                val newConfig = LayoutConfigEntity(widgetOrder = widgetOrder)
+                val newConfig = LayoutConfigEntity(
+                    widgetOrder = widgetOrder,
+                    widgetPositions = widgetPositions ?: ""
+                )
                 layoutConfigDao.insertLayoutConfig(newConfig)
-                Log.d(TAG, "Layout config created: $widgetOrder")
+                Log.d(TAG, "Layout config created: order=$widgetOrder, positions=${widgetPositions?.take(100)}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error saving layout config: ${e.message}", e)
+        }
+    }
+    
+    /**
+     * 保存位置信息
+     */
+    suspend fun saveWidgetPositions(widgetPositions: String) {
+        try {
+            val existingConfig = layoutConfigDao.getLayoutConfig().firstOrNull()
+            if (existingConfig != null) {
+                val updatedConfig = existingConfig.copy(widgetPositions = widgetPositions)
+                layoutConfigDao.updateLayoutConfig(updatedConfig)
+                Log.d(TAG, "Widget positions updated: ${widgetPositions.take(100)}")
+            } else {
+                // 如果没有配置，创建一个新的
+                val newConfig = LayoutConfigEntity(
+                    widgetOrder = getDefaultOrder(),
+                    widgetPositions = widgetPositions
+                )
+                layoutConfigDao.insertLayoutConfig(newConfig)
+                Log.d(TAG, "Layout config created with positions: ${widgetPositions.take(100)}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving widget positions: ${e.message}", e)
         }
     }
 
