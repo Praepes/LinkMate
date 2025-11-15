@@ -313,31 +313,40 @@ fun HomeScreen(
     }
 
     LaunchedEffect(Unit) {
-        val fineLocationGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        val coarseLocationGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        hasLocationPermission = fineLocationGranted || coarseLocationGranted
-
-        hasBackgroundLocationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-
-        val permissionsToRequest = mutableListOf<String>()
-        if (!hasLocationPermission) {
-            permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
-            permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
-        }
-        // Request background location only if needed and not granted
-        if (!hasBackgroundLocationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            permissionsToRequest.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        }
-
-        if (permissionsToRequest.isNotEmpty()) {
-            requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
-        } else {
-            // If all necessary permissions are already granted, start the updates.
+        // API < 23 (Android 5.0-5.1) 权限在安装时授予，直接检查即可
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            // 对于 API 21-22，权限在安装时已授予
+            hasLocationPermission = true
+            hasBackgroundLocationPermission = true
             viewModel.onPermissionsGranted()
+        } else {
+            // API 23+ 需要运行时权限请求
+            val fineLocationGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            val coarseLocationGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            hasLocationPermission = fineLocationGranted || coarseLocationGranted
+
+            hasBackgroundLocationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+
+            val permissionsToRequest = mutableListOf<String>()
+            if (!hasLocationPermission) {
+                permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+                permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+            }
+            // Request background location only if needed and not granted
+            if (!hasBackgroundLocationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                permissionsToRequest.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            }
+
+            if (permissionsToRequest.isNotEmpty()) {
+                requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
+            } else {
+                // If all necessary permissions are already granted, start the updates.
+                viewModel.onPermissionsGranted()
+            }
         }
     }
 

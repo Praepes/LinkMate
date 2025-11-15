@@ -102,7 +102,7 @@ LinkMate 是一个横屏显示的智能家居控制面板应用，可以运行�
 
 ## 系统要求
 
-- **最低 Android 版本**: Android 6.0 (API 23)
+- **最低 Android 版本**: Android 5.0 (API 21)
 - **目标 Android 版本**: Android 14 (API 34)
 - **屏幕方向**: 横屏（Landscape）
 - **设备类型**: 推荐平板设备

@@ -1209,6 +1209,7 @@ class HomeViewModel @Inject constructor(
                             // 2. 或者包含 HA 实体（任何 domain.entity_id 格式的项，如 binary_sensor.*, light.* 等）
                             // 3. 或者包含 button.* 或 conversation.*（特殊的 HA 实体类型）
                             // 如果都不满足，说明是旧版本的遗留数据，需要重置
+                            // 但是，如果布局中只有基础项（WEATHER、REMINDERS、SETTINGS），这也是有效的，不应该重置
                             val hasHaGrid = parsed.contains("HA_GRID")
                             val hasHaEntities = parsed.any { itemId ->
                                 // 检查是否是 HA 实体（格式：domain.entity_id）
@@ -1220,12 +1221,36 @@ class HomeViewModel @Inject constructor(
                                 it.startsWith("button.") || it.startsWith("conversation.") 
                             }
                             
-                            if (!hasHaGrid && !hasHaEntities && !hasButtonOrConversation) {
-                                Log.w(TAG, "Detected legacy layout without HA_GRID or HA entities, resetting to default")
+                            // 检查是否包含基础项（至少应该有一些基础项）
+                            val hasBasicItems = parsed.any { 
+                                it in listOf("WEATHER", "REMINDERS", "SETTINGS", "HA_GRID") 
+                            }
+                            
+                            // 只有在既没有 HA 相关项，也没有基础项的情况下，才认为是旧版本数据
+                            if (!hasHaGrid && !hasHaEntities && !hasButtonOrConversation && !hasBasicItems) {
+                                Log.w(TAG, "Detected legacy layout without any valid items, resetting to default")
                                 layoutRepository.deleteLayoutConfig()
                                 listOf("WEATHER", "REMINDERS", "SETTINGS", "HA_GRID")
                             } else {
-                                parsed
+                                // 确保基础项始终存在（如果缺失，添加它们）
+                                val basicItems = listOf("WEATHER", "REMINDERS", "SETTINGS", "HA_GRID")
+                                val missingBasicItems = basicItems.filter { it !in parsed }
+                                if (missingBasicItems.isNotEmpty()) {
+                                    Log.w(TAG, "Missing basic items in layout: $missingBasicItems, adding them")
+                                    val updatedOrder = parsed.toMutableList()
+                                    // 在末尾添加缺失的基础项
+                                    missingBasicItems.forEach { item ->
+                                        if (item !in updatedOrder) {
+                                            updatedOrder.add(item)
+                                        }
+                                    }
+                                    // 保存更新后的顺序
+                                    val json = gson.toJson(updatedOrder)
+                                    layoutRepository.saveLayoutConfig(json)
+                                    updatedOrder
+                                } else {
+                                    parsed
+                                }
                             }
                         }
                     } catch (e: Exception) {
@@ -1243,8 +1268,26 @@ class HomeViewModel @Inject constructor(
                     _widgetOrder.value = uniqueOrder
                     Log.d(TAG, "Layout order loaded: $uniqueOrder")
 
+                    // 加载位置信息
+                    val loadedPositions = mutableMapOf<String, io.linkmate.ui.components.WidgetPosition>()
+                    if (!config?.widgetPositions.isNullOrBlank()) {
+                        try {
+                            val positionsType = object : TypeToken<Map<String, Map<String, Int>>>() {}.type
+                            val positionsMap = gson.fromJson<Map<String, Map<String, Int>>>(config?.widgetPositions, positionsType)
+                            positionsMap?.forEach { (itemId, posMap) ->
+                                val x = posMap["x"] ?: 0
+                                val y = posMap["y"] ?: 0
+                                loadedPositions[itemId] = io.linkmate.ui.components.WidgetPosition(x, y)
+                            }
+                            Log.d(TAG, "Loaded widget positions from database: ${loadedPositions.size} items")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error parsing widget positions: ${e.message}", e)
+                        }
+                    }
+                    
                     // 更新位置信息：为新项生成位置，保持已有项的位置
-                    val currentPositions = _widgetPositions.value.toMutableMap()
+                    // 只保留在当前 widgetOrder 中的项的位置信息
+                    val currentPositions = loadedPositions.filterKeys { it in uniqueOrder }.toMutableMap()
                     
                     // 找出没有位置的项
                     val itemsWithoutPosition = uniqueOrder.filter { itemId ->
@@ -1296,6 +1339,10 @@ class HomeViewModel @Inject constructor(
                         val autoPositions = generatePositionsFromOrder(uniqueOrder)
                         _widgetPositions.value = autoPositions
                         Log.d(TAG, "自动生成所有位置信息 $autoPositions")
+                    } else {
+                        // 所有项都有位置信息，直接使用加载的位置
+                        _widgetPositions.value = currentPositions
+                        Log.d(TAG, "使用已加载的位置信息: ${currentPositions.size} items")
                     }
                 }
         }
@@ -1432,8 +1479,18 @@ class HomeViewModel @Inject constructor(
             
             Log.d(TAG, "Widget position updated: $itemId -> (${position.x}, ${position.y})")
             
-            // 保存位置信息到数据库（暂时先只保存顺序，位置信息可以后续扩展）
-            // TODO: 扩展数据库结构以支持位置信息存储
+            // 保存位置信息到数据库
+            try {
+                // 将位置信息转换为 JSON 格式: {"itemId": {"x": 0, "y": 0}, ...}
+                val positionsMap = currentPositions.mapValues { (_, pos) ->
+                    mapOf("x" to pos.x, "y" to pos.y)
+                }
+                val positionsJson = gson.toJson(positionsMap)
+                layoutRepository.saveWidgetPositions(positionsJson)
+                Log.d(TAG, "Widget positions saved to database")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error saving widget positions: ${e.message}", e)
+            }
         }
     }
 

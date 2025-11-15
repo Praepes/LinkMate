@@ -131,26 +131,33 @@ fun LocationPermissionRequester(homeViewModel: HomeViewModel = hiltViewModel()) 
     }
 
     LaunchedEffect(Unit) {
-        val fineLocationPermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val coarseLocationPermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (!fineLocationPermission || !coarseLocationPermission) {
-            requestPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        } else {
-            // 权限已经被授予，直接通知 ViewModel
+        // API < 23 (Android 5.0-5.1) 权限在安装时授予，直接检查即可
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            // 对于 API 21-22，权限在安装时已授予，直接通知 ViewModel
             homeViewModel.onPermissionsGranted()
+        } else {
+            // API 23+ 需要运行时权限请求
+            val fineLocationPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            val coarseLocationPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!fineLocationPermission || !coarseLocationPermission) {
+                requestPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
+            } else {
+                // 权限已经被授予，直接通知 ViewModel
+                homeViewModel.onPermissionsGranted()
+            }
         }
     }
 }
